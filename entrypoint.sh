@@ -9,6 +9,18 @@ log_info() { echo "::notice::$*"; }
 log_warn() { echo "::warning::$*"; }
 log_err()  { echo "::error::$*" >&2; }
 
+group_start() { echo "::group::$*"; }
+group_end()   { echo "::endgroup::"; }
+
+# Append a single GITHUB_OUTPUT line; falls back to stdout when running outside CI.
+output_line() {
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    echo "$1" >> "$GITHUB_OUTPUT"
+  else
+    echo "OUTPUT> $1"
+  fi
+}
+
 is_true() {
   case "${1:-}" in
     1|true|TRUE|True|yes|YES|on|ON) return 0 ;;
@@ -40,14 +52,21 @@ fi
 
 # ---- Login ----
 if is_true "$REGISTRY_LOGIN"; then
+  if [[ -z "$USERNAME" ]]; then
+    log_err "registry_login is true but 'username' is empty."
+    exit 1
+  fi
   if [[ -z "$PASSWORD" ]]; then
     log_err "registry_login is true but 'password' is empty."
     exit 1
   fi
   REGISTRY_HOST=$(echo "$REGISTRY" | sed -E 's|^oci://||; s|/.*$||')
-  log "Login to $REGISTRY_HOST as ${USERNAME:-<unset>}"
+
+  group_start "Login to $REGISTRY_HOST"
+  log "Login to $REGISTRY_HOST as $USERNAME"
   printf '%s' "$PASSWORD" | helm registry login "$REGISTRY_HOST" \
-    --username "${USERNAME:-}" --password-stdin
+    --username "$USERNAME" --password-stdin
+  group_end
 else
   log "registry_login=false; assuming caller has already logged in."
 fi
@@ -75,6 +94,8 @@ tgz_meta() {
 
 declare -a TARBALLS=()
 
+group_start "Stage chart tarballs"
+
 # (a) tarballs glob
 if [[ -n "$TARBALLS_GLOB" ]]; then
   shopt -s nullglob
@@ -94,6 +115,7 @@ if [[ -n "$CHARTS_CSV" ]]; then
     cp="${cp%"${cp##*[![:space:]]}"}"
     [[ -z "$cp" ]] && continue
     if [[ ! -d "$cp" ]]; then
+      group_end
       log_err "Chart path not found: $cp"
       exit 1
     fi
@@ -105,6 +127,7 @@ fi
 # (c) charts_dir: scan subdirectories that contain Chart.yaml
 if [[ -n "$CHARTS_DIR" ]]; then
   if [[ ! -d "$CHARTS_DIR" ]]; then
+    group_end
     log_err "charts_dir not found: $CHARTS_DIR"
     exit 1
   fi
@@ -122,10 +145,13 @@ for f in "$STAGING_DIR"/*.tgz; do
 done
 shopt -u nullglob
 
+log "Staged ${#TARBALLS[@]} tarball(s)"
+group_end
+
 if [[ ${#TARBALLS[@]} -eq 0 ]]; then
   log_warn "No chart tarballs to push (no matches and no charts to package)."
-  echo "pushed_charts=" >> "$GITHUB_OUTPUT"
-  echo "skipped_charts=" >> "$GITHUB_OUTPUT"
+  output_line "pushed_charts="
+  output_line "skipped_charts="
   exit 0
 fi
 
@@ -134,6 +160,8 @@ declare -a PUSHED=()
 declare -a SKIPPED=()
 
 REGISTRY_TRIMMED="${REGISTRY%/}"
+
+group_start "Push to $REGISTRY"
 
 for tgz in "${TARBALLS[@]}"; do
   read -r name version < <(tgz_meta "$tgz")
@@ -162,9 +190,12 @@ for tgz in "${TARBALLS[@]}"; do
       log_warn "continue_on_error=true; moving on"
       continue
     fi
+    group_end
     exit 1
   fi
 done
+
+group_end
 
 # ---- Outputs ----
 join_csv() { local IFS=','; echo "$*"; }
@@ -174,8 +205,8 @@ SKIPPED_CSV=""
 [[ ${#PUSHED[@]} -gt 0 ]] && PUSHED_CSV=$(join_csv "${PUSHED[@]}")
 [[ ${#SKIPPED[@]} -gt 0 ]] && SKIPPED_CSV=$(join_csv "${SKIPPED[@]}")
 
-echo "pushed_charts=${PUSHED_CSV}" >> "$GITHUB_OUTPUT"
-echo "skipped_charts=${SKIPPED_CSV}" >> "$GITHUB_OUTPUT"
+output_line "pushed_charts=${PUSHED_CSV}"
+output_line "skipped_charts=${SKIPPED_CSV}"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
