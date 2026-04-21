@@ -1,5 +1,5 @@
 name: Helm OCI Push
-description: Push Helm charts to any OCI registry (GHCR, ECR, GAR, Harbor, Quay). Supports tarball glob, chart paths, and directory scan.
+description: Push Helm charts to any OCI registry (GHCR, ECR, GAR, Harbor, Quay) via tarball glob, chart paths, or directory scan.
 author: somaz94
 
 branding:
