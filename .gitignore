@@ -22,3 +22,7 @@ Thumbs.db
 # IDE files
 .idea
 *.code-workspace
+
+# Local test artifacts (Makefile)
+fixtures/
+dist/
