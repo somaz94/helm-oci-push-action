@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.1](https://github.com/somaz94/helm-oci-push-action/compare/v1.0.0...v1.0.1) (2026-04-21)
+
+### Code Refactoring
+
+- install latest helm at build time, drop hardcoded v3.16.4 pin ([0a6ab94](https://github.com/somaz94/helm-oci-push-action/commit/0a6ab94a6affe39ddb260307e3b23381585a45ac))
+
+### Documentation
+
+- fix license reference (MIT, matches LICENSE file) ([a64097b](https://github.com/somaz94/helm-oci-push-action/commit/a64097b42c7d09ff162377f9c20e3dbcde8df66c))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.0](https://github.com/somaz94/helm-oci-push-action/releases/tag/v1.0.0) (2026-04-21)
 
 ### Features
