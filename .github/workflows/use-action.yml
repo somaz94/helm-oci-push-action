@@ -1,0 +1,204 @@
+name: Smoke Test (Released Action)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run:
+        description: 'workflow run'
+        required: true
+        default: 'true'
+  workflow_run:
+    workflows: ["Create release"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  TEST_REGISTRY: oci://ghcr.io/${{ github.repository_owner }}/test-helm-oci-push
+
+jobs:
+  smoke-test-basic:
+    name: Smoke Test (charts mode, real push)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Helm (for fixture)
+        uses: azure/setup-helm@v5
+        with:
+          version: v3.16.4
+
+      - name: Create fixture chart with timestamp version
+        id: fixture
+        run: |
+          VER="0.0.$(date +%s)"
+          mkdir -p fixtures/charts/smoke-chart/templates
+          cat > fixtures/charts/smoke-chart/Chart.yaml <<YAML
+          apiVersion: v2
+          name: smoke-chart
+          version: ${VER}
+          appVersion: "1.0.0"
+          description: smoke test fixture
+          type: application
+          YAML
+          cat > fixtures/charts/smoke-chart/templates/configmap.yaml <<'YAML'
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: smoke-chart
+          data:
+            hello: world
+          YAML
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+
+      - name: Push chart to GHCR test namespace
+        id: push
+        uses: somaz94/helm-oci-push-action@v1
+        with:
+          charts: fixtures/charts/smoke-chart
+          registry: ${{ env.TEST_REGISTRY }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify pushed_charts output
+        run: |
+          PUSHED="${{ steps.push.outputs.pushed_charts }}"
+          EXPECT="smoke-chart:${{ steps.fixture.outputs.version }}"
+          echo "pushed_charts: $PUSHED"
+          if [ "$PUSHED" != "$EXPECT" ]; then
+            echo "::error::expected '$EXPECT' in pushed_charts, got '$PUSHED'"
+            exit 1
+          fi
+          echo "[PASS] basic smoke test"
+
+  smoke-test-skip-existing:
+    name: Smoke Test (skip_existing)
+    runs-on: ubuntu-latest
+    needs: smoke-test-basic
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Helm (for fixture)
+        uses: azure/setup-helm@v5
+        with:
+          version: v3.16.4
+
+      - name: Create fixture chart with fixed version
+        run: |
+          mkdir -p fixtures/charts/skip-chart/templates
+          cat > fixtures/charts/skip-chart/Chart.yaml <<'YAML'
+          apiVersion: v2
+          name: skip-chart
+          version: 0.1.0
+          appVersion: "1.0.0"
+          description: idempotency test fixture
+          type: application
+          YAML
+          cat > fixtures/charts/skip-chart/templates/configmap.yaml <<'YAML'
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: skip-chart
+          data:
+            hello: world
+          YAML
+
+      - name: First push (must succeed or skip)
+        uses: somaz94/helm-oci-push-action@v1
+        with:
+          charts: fixtures/charts/skip-chart
+          registry: ${{ env.TEST_REGISTRY }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          skip_existing: true
+
+      - name: Second push (must skip)
+        id: second
+        uses: somaz94/helm-oci-push-action@v1
+        with:
+          charts: fixtures/charts/skip-chart
+          registry: ${{ env.TEST_REGISTRY }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          skip_existing: true
+
+      - name: Verify second push was skipped
+        run: |
+          PUSHED="${{ steps.second.outputs.pushed_charts }}"
+          SKIPPED="${{ steps.second.outputs.skipped_charts }}"
+          echo "pushed_charts: $PUSHED"
+          echo "skipped_charts: $SKIPPED"
+          if [ -n "$PUSHED" ]; then
+            echo "::error::expected empty pushed_charts on second run, got '$PUSHED'"
+            exit 1
+          fi
+          if ! echo "$SKIPPED" | grep -q 'skip-chart:0.1.0'; then
+            echo "::error::expected 'skip-chart:0.1.0' in skipped_charts, got '$SKIPPED'"
+            exit 1
+          fi
+          echo "[PASS] skip_existing smoke test"
+
+  smoke-test-dry-run:
+    name: Smoke Test (dry_run)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Helm (for fixture)
+        uses: azure/setup-helm@v5
+        with:
+          version: v3.16.4
+
+      - name: Create fixture chart
+        run: |
+          mkdir -p fixtures/charts/dry-chart/templates
+          cat > fixtures/charts/dry-chart/Chart.yaml <<'YAML'
+          apiVersion: v2
+          name: dry-chart
+          version: 9.9.9
+          appVersion: "1.0.0"
+          description: dry-run fixture
+          type: application
+          YAML
+          cat > fixtures/charts/dry-chart/templates/configmap.yaml <<'YAML'
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: dry-chart
+          data:
+            hello: world
+          YAML
+
+      - name: Dry-run push
+        id: dry
+        uses: somaz94/helm-oci-push-action@v1
+        with:
+          charts: fixtures/charts/dry-chart
+          registry: ${{ env.TEST_REGISTRY }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: true
+
+      - name: Verify nothing was pushed
+        run: |
+          PUSHED="${{ steps.dry.outputs.pushed_charts }}"
+          SKIPPED="${{ steps.dry.outputs.skipped_charts }}"
+          echo "pushed_charts: $PUSHED"
+          echo "skipped_charts: $SKIPPED"
+          if [ -n "$PUSHED" ]; then
+            echo "::error::dry_run=true but pushed_charts is non-empty: '$PUSHED'"
+            exit 1
+          fi
+          if ! echo "$SKIPPED" | grep -q 'dry-chart:9.9.9'; then
+            echo "::error::expected 'dry-chart:9.9.9' in skipped_charts, got '$SKIPPED'"
+            exit 1
+          fi
+          echo "[PASS] dry_run smoke test"

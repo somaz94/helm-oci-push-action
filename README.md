@@ -1,214 +1,234 @@
-# Create a Container Action
+# helm-oci-push-action
 
-![Continuous Integration](https://github.com/actions/container-action/actions/workflows/ci.yml/badge.svg)
-![Linter](https://github.com/actions/container-action/actions/workflows/linter.yml/badge.svg)
+[![CI](https://github.com/somaz94/helm-oci-push-action/actions/workflows/ci.yml/badge.svg)](https://github.com/somaz94/helm-oci-push-action/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Latest Tag](https://img.shields.io/github/v/tag/somaz94/helm-oci-push-action)](https://github.com/somaz94/helm-oci-push-action/tags)
+[![Top Language](https://img.shields.io/github/languages/top/somaz94/helm-oci-push-action)](https://github.com/somaz94/helm-oci-push-action)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Helm%20OCI%20Push-blue?logo=github)](https://github.com/marketplace/actions/helm-oci-push)
 
-Use this template to bootstrap the creation of a container action. :rocket:
+A GitHub Action that pushes Helm charts to any OCI registry (GHCR, ECR, GAR, Harbor, Quay, Artifactory). Supports pre-packaged tarball globs, comma-separated chart paths, and directory scans — all from a single step.
 
-This template includes compilation support, tests, a validation workflow,
-publishing, and versioning guidance.
+<br/>
 
-## Create Your Own Action
+## Features
 
-To create your own action, you can use this repository as a template! Just
-follow the below instructions:
+- Push to **any OCI registry** (GHCR by default, plus ECR, GAR, Harbor, Quay, Artifactory, ...)
+- Three input modes: **`tarballs`** glob, **`charts`** comma-separated paths, **`charts_dir`** auto-scan
+- **Dry-run** mode for PR validation without publishing
+- **Skip existing** chart versions to make releases idempotent
+- **`continue_on_error`** to keep going when one chart fails
+- Built-in `helm registry login` (or skip and let your workflow handle it)
+- Self-contained Docker action — `helm` is bundled, no `azure/setup-helm` required
 
-1. Click the **Use this template** button at the top of the repository
-1. Select **Create a new repository**
-1. Select an owner and name for your new repository
-1. Click **Create repository**
-1. Clone your new repository
+<br/>
 
-> [!IMPORTANT]
->
-> Make sure to remove or update the [`CODEOWNERS`](./CODEOWNERS) file! For
-> details on how to use this file, see
-> [About code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
-
-## Initial Setup
-
-After you've cloned the repository to your local machine or codespace, you'll
-need to perform some initial setup steps before you can develop your action.
-
-> [!NOTE]
->
-> You'll need to have a reasonably modern version of
-> [Docker](https://www.docker.com/get-started/) handy (e.g. docker engine
-> version 20 or later).
-
-1. :hammer_and_wrench: Build the container
-
-   Make sure to replace `actions/container-action` with an appropriate label for
-   your container.
-
-   ```bash
-   docker build -t actions/container-action .
-   ```
-
-1. :white_check_mark: Test the container
-
-   You can pass individual environment variables using the `--env` or `-e` flag.
-
-   ```bash
-   $ docker run --env INPUT_WHO_TO_GREET="Mona Lisa Octocat" actions/container-action
-   ::notice file=entrypoint.sh,line=7::Hello, Mona Lisa Octocat!
-   ```
-
-   Or you can pass a file with environment variables using `--env-file`.
-
-   ```bash
-   $ cat ./.env.test
-   INPUT_WHO_TO_GREET="Mona Lisa Octocat"
-
-   $ docker run --env-file ./.env.test actions/container-action
-   ::notice file=entrypoint.sh,line=7::Hello, Mona Lisa Octocat!
-   ```
-
-## Update the Action Metadata
-
-The [`action.yml`](action.yml) file defines metadata about your action, such as
-input(s) and output(s). For details about this file, see
-[Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions).
-
-When you copy this repository, update `action.yml` with the name, description,
-inputs, and outputs for your action.
-
-## Update the Action Code
-
-In this template, the container action runs a shell script,
-[`entrypoint.sh`](./entrypoint.sh), when the container is launched. Since you
-can choose any base Docker image and language you like, you can change this to
-suite your needs. There are a few main things to remember when writing code for
-container actions:
-
-- Inputs are accessed using argument identifiers or environment variables
-  (depending on what you set in your `action.yml`). For example, the first input
-  to this action, `who-to-greet`, can be accessed in the entrypoint script using
-  the `$INPUT_WHO_TO_GREET` environment variable.
-
-  ```bash
-  GREETING="Hello, $INPUT_WHO_TO_GREET!"
-  ```
-
-- GitHub Actions supports a number of different workflow commands such as
-  creating outputs, setting environment variables, and more. These are
-  accomplished by writing to different `GITHUB_*` environment variables. For
-  more information, see
-  [Workflow commands](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions).
-
-  | Scenario              | Example                                         |
-  | --------------------- | ----------------------------------------------- |
-  | Set environment vars  | `echo "MY_VAR=my-value" >> "$GITHUB_ENV"`       |
-  | Set outputs           | `echo "greeting=$GREETING" >> "$GITHUB_OUTPUT"` |
-  | Prepend to `PATH`     | `echo "$HOME/.local/bin" >> "$GITHUB_PATH"`     |
-  | Set `pre`/`post` vars | `echo "MY_VAR=my-value" >> "$GITHUB_STATE"`     |
-  | Set step summary      | `echo "{markdown}" >> "$GITHUB_STEP_SUMMARY"`   |
-
-  You can write multiline strings using the following syntax:
-
-  ```bash
-  {
-    echo "JSON_RESPONSE<<EOF"
-    curl https://example.com
-    echo "EOF"
-  } >> "$GITHUB_ENV"
-  ```
-
-- Make sure that the script being run is executable!
-
-  ```bash
-  git add entrypoint.sh
-  git update-index --chmod=+x entrypoint.sh
-  ```
-
-So, what are you waiting for? Go ahead and start customizing your action!
-
-1. Create a new branch
-
-   ```bash
-   git checkout -b releases/v1
-   ```
-
-1. Replace the contents of `entrypoint.sh` with your action code
-1. Build and test the container
-
-   ```bash
-   docker build -t actions/container-action .
-   docker run actions/container-action "Mona Lisa Octocat"
-   ```
-
-1. Commit your changes
-
-   ```bash
-   git add .
-   git commit -m "My first action is ready!"
-   ```
-
-1. Push them to your repository
-
-   ```bash
-   git push -u origin releases/v1
-   ```
-
-1. Create a pull request and get feedback on your action
-1. Merge the pull request into the `main` branch
-
-Your action is now published! :rocket:
-
-For information about versioning your action, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-## Validate the Action
-
-You can now validate the action by referencing it in a workflow file. For
-example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
-action in the same repository.
+## Quick Start
 
 ```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
-
-  - name: Test Local Action
-    id: test-action
-    uses: ./
-    with:
-      who-to-greet: Mona Lisa Octocat
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.greeting }}"
+- name: Push chart to GHCR
+  uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts: ./helm/my-app
+    password: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-For example workflow runs, check out the
-[Actions tab](https://github.com/actions/container-action/actions)! :rocket:
+<br/>
 
 ## Usage
 
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
+### 1. Push pre-packaged tarballs (most common)
 
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
+Use this when an earlier step already produced `.tgz` files (e.g., `helm package` to a staging directory, or `chart-releaser-action`).
 
 ```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
+- name: Package
+  run: helm package ./helm/my-app -d /tmp/staging
 
-  - name: Test Local Action
-    id: test-action
-    uses: actions/container-action@v1 # Commit with the `v1` tag
-    with:
-      who-to-greet: Mona Lisa Octocat
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.greeting }}"
+- name: Push to GHCR
+  uses: somaz94/helm-oci-push-action@v1
+  with:
+    tarballs: /tmp/staging/*.tgz
+    password: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+<br/>
+
+### 2. Package and push a single chart
+
+```yaml
+- uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts: ./helm/my-app
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+<br/>
+
+### 3. Package and push multiple charts
+
+```yaml
+- uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts: charts/foo,charts/bar,charts/baz
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+<br/>
+
+### 4. Auto-scan a directory of charts
+
+Every immediate subdirectory containing a `Chart.yaml` is packaged and pushed.
+
+```yaml
+- uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts_dir: charts
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+<br/>
+
+### 5. Combine with `chart-releaser-action`
+
+`chart-releaser-action` emits `changed_charts` as a comma-separated list — feed it directly to the `charts` input.
+
+```yaml
+- name: Run chart-releaser
+  id: cr
+  uses: helm/chart-releaser-action@v1.7.0
+  with:
+    charts_dir: charts
+    skip_existing: true
+  env:
+    CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+- name: Push released charts to GHCR
+  if: steps.cr.outputs.changed_charts != ''
+  uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts: ${{ steps.cr.outputs.changed_charts }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+<br/>
+
+### 6. Push to a non-GHCR registry (Harbor / ECR / etc.)
+
+When you've already authenticated via a provider-specific action (e.g., `aws-actions/amazon-ecr-login`), set `registry_login: false`.
+
+```yaml
+- name: Login to ECR
+  uses: aws-actions/amazon-ecr-login@v2
+
+- uses: somaz94/helm-oci-push-action@v1
+  with:
+    tarballs: dist/*.tgz
+    registry: oci://123456789012.dkr.ecr.us-east-1.amazonaws.com/charts
+    registry_login: false
+```
+
+<br/>
+
+### 7. Dry-run for PR validation
+
+Package and validate without publishing — perfect for PR checks.
+
+```yaml
+- uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts_dir: charts
+    dry_run: true
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+<br/>
+
+### 8. Skip existing versions
+
+Make releases idempotent — chart versions already present in the registry are skipped.
+
+```yaml
+- uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts_dir: charts
+    skip_existing: true
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+<br/>
+
+## Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `tarballs` | Glob pattern for pre-packaged chart tarballs (e.g., `dist/*.tgz`) | No | `''` |
+| `charts` | Comma-separated chart directory paths to package and push | No | `''` |
+| `charts_dir` | Directory whose immediate subdirectories are packaged and pushed | No | `''` |
+| `registry` | Target OCI registry URL | No | `oci://ghcr.io/${{ github.repository_owner }}/charts` |
+| `registry_login` | Run `helm registry login` inside the action | No | `true` |
+| `username` | Registry username | No | `${{ github.actor }}` |
+| `password` | Registry password / token (typically `secrets.GITHUB_TOKEN` for GHCR) | No | `''` |
+| `dry_run` | Package and validate but do not push | No | `false` |
+| `skip_existing` | Skip chart@version pairs already in the registry (best-effort) | No | `false` |
+| `continue_on_error` | Continue with the next chart when a push fails | No | `false` |
+
+At least one of `tarballs`, `charts`, or `charts_dir` must be provided.
+
+<br/>
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `pushed_charts` | Comma-separated `name:version` pairs actually pushed |
+| `skipped_charts` | Comma-separated `name:version` pairs skipped (existing or dry-run) |
+
+Example:
+
+```yaml
+- id: push
+  uses: somaz94/helm-oci-push-action@v1
+  with:
+    charts_dir: charts
+    skip_existing: true
+    password: ${{ secrets.GITHUB_TOKEN }}
+
+- run: |
+    echo "Pushed: ${{ steps.push.outputs.pushed_charts }}"
+    echo "Skipped: ${{ steps.push.outputs.skipped_charts }}"
+```
+
+<br/>
+
+## Login Behavior
+
+By default the action runs `helm registry login` against the host portion of `registry`. If `password` is empty, the step fails with a clear error.
+
+Set `registry_login: false` when:
+
+- A previous step already authenticated (e.g., `docker/login-action`, `aws-actions/amazon-ecr-login`, `google-github-actions/auth`).
+- You want to use a non-username/password auth flow your provider supports.
+
+<br/>
+
+## Permissions
+
+For pushing to GHCR with the default `${{ secrets.GITHUB_TOKEN }}`, the calling workflow needs:
+
+```yaml
+permissions:
+  contents: read
+  packages: write
+```
+
+<br/>
+
+## Helm Version
+
+The action ships with `helm v3.16.4` baked into the image. To pin a different version, fork and override the `HELM_VERSION` build arg in the `Dockerfile`.
+
+<br/>
+
+## License
+
+This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.

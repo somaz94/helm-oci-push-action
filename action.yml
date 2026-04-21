@@ -1,26 +1,70 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: Helm OCI Push
+description: Push Helm charts to any OCI registry (GHCR, ECR, GAR, Harbor, Quay). Supports tarball glob, chart paths, and directory scan.
+author: somaz94
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: upload-cloud
+  color: blue
 
-# Define your inputs here.
 inputs:
-  who-to-greet:
-    description: Your input description here
-    required: true
-    default: World
+  tarballs:
+    description: 'Glob pattern for pre-packaged chart tarballs (e.g., dist/*.tgz, /tmp/staging/*.tgz)'
+    required: false
+    default: ''
+  charts:
+    description: 'Comma-separated chart directory paths to package and push (e.g., charts/foo,charts/bar)'
+    required: false
+    default: ''
+  charts_dir:
+    description: 'Directory whose immediate subdirectories are treated as charts to package and push'
+    required: false
+    default: ''
+  registry:
+    description: 'Target OCI registry URL (e.g., oci://ghcr.io/<owner>/charts, oci://harbor.example.com/charts)'
+    required: false
+    default: 'oci://ghcr.io/${{ github.repository_owner }}/charts'
+  registry_login:
+    description: 'Whether the action should log in to the registry. Set false if a previous step already logged in.'
+    required: false
+    default: 'true'
+  username:
+    description: 'Registry username (used when registry_login is true)'
+    required: false
+    default: ${{ github.actor }}
+  password:
+    description: 'Registry password or token (used when registry_login is true). Typically secrets.GITHUB_TOKEN for GHCR.'
+    required: false
+    default: ''
+  dry_run:
+    description: 'If true, package and validate but do not push to the registry'
+    required: false
+    default: 'false'
+  skip_existing:
+    description: 'If true, skip chart@version pairs that already exist in the registry (best-effort HEAD check)'
+    required: false
+    default: 'false'
+  continue_on_error:
+    description: 'If true, continue with the next chart when a push fails instead of failing the step'
+    required: false
+    default: 'false'
 
-# Define your outputs here.
 outputs:
-  greeting:
-    description: Your output description here
+  pushed_charts:
+    description: 'Comma-separated list of name:version pairs actually pushed'
+  skipped_charts:
+    description: 'Comma-separated list of name:version pairs skipped (existing or dry-run)'
 
 runs:
   using: docker
   image: Dockerfile
   env:
-    INPUT_WHO_TO_GREET: ${{ inputs.who-to-greet }}
+    INPUT_TARBALLS: ${{ inputs.tarballs }}
+    INPUT_CHARTS: ${{ inputs.charts }}
+    INPUT_CHARTS_DIR: ${{ inputs.charts_dir }}
+    INPUT_REGISTRY: ${{ inputs.registry }}
+    INPUT_REGISTRY_LOGIN: ${{ inputs.registry_login }}
+    INPUT_USERNAME: ${{ inputs.username }}
+    INPUT_PASSWORD: ${{ inputs.password }}
+    INPUT_DRY_RUN: ${{ inputs.dry_run }}
+    INPUT_SKIP_EXISTING: ${{ inputs.skip_existing }}
+    INPUT_CONTINUE_ON_ERROR: ${{ inputs.continue_on_error }}
