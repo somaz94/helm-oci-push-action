@@ -1,0 +1,30 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+CONTRIBUTORS.md
+LICENSE
+RELEASE.md
+*.md
+docs/
+
+# GitHub workflows
+.github/
+
+# Development files
+.vscode/
+.idea/
+.devcontainer/
+
+# Test fixtures and build artifacts
+fixtures/
+dist/
+helm-repo/
+
+# OS files
+.DS_Store
+Thumbs.db
