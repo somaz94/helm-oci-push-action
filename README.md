@@ -225,7 +225,7 @@ permissions:
 
 ## Helm Version
 
-The action ships with `helm v3.16.4` baked into the image. To pin a different version, fork and override the `HELM_VERSION` build arg in the `Dockerfile`.
+The action installs the **latest stable Helm** at image build time (resolved via the GitHub releases API). To pin a specific version, fork the repo and override the `HELM_VERSION` build arg in the `Dockerfile` (e.g., `ARG HELM_VERSION=v3.16.4`).
 
 <br/>
 

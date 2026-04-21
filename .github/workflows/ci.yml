@@ -51,7 +51,7 @@ jobs:
       - name: Setup Helm (for fixture packaging)
         uses: azure/setup-helm@v5
         with:
-          version: v3.16.4
+          version: latest
 
       - name: Create fixture chart
         run: |

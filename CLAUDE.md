@@ -14,7 +14,7 @@
 ## Key Files
 
 - `action.yml` — GitHub Action definition (11 inputs, 2 outputs, `runs.using: docker`)
-- `Dockerfile` — alpine 3.23 + helm v3.16.4 (`HELM_VERSION` ARG)
+- `Dockerfile` — alpine 3.23 + latest stable helm (resolved at build time via GitHub releases API; `HELM_VERSION` ARG defaults to `latest`, override for a pinned version)
 - `entrypoint.sh` — main push logic (`$INPUT_*` env vars, writes to `$GITHUB_OUTPUT` and `$GITHUB_STEP_SUMMARY`)
 - `cliff.toml` — git-cliff conventional commit groups for release notes
 
