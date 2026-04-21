@@ -1,7 +1,7 @@
 # helm-oci-push-action
 
 [![CI](https://github.com/somaz94/helm-oci-push-action/actions/workflows/ci.yml/badge.svg)](https://github.com/somaz94/helm-oci-push-action/actions/workflows/ci.yml)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Latest Tag](https://img.shields.io/github/v/tag/somaz94/helm-oci-push-action)](https://github.com/somaz94/helm-oci-push-action/tags)
 [![Top Language](https://img.shields.io/github/languages/top/somaz94/helm-oci-push-action)](https://github.com/somaz94/helm-oci-push-action)
 [![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Helm%20OCI%20Push-blue?logo=github)](https://github.com/marketplace/actions/helm-oci-push)
@@ -231,4 +231,4 @@ The action ships with `helm v3.16.4` baked into the image. To pin a different ve
 
 ## License
 
-This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
