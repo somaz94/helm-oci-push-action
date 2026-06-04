@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.2](https://github.com/somaz94/helm-oci-push-action/compare/v1.0.1...v1.0.2) (2026-06-04)
+
+### Bug Fixes
+
+- harden entrypoint input validation and tarball error handling ([d6b0244](https://github.com/somaz94/helm-oci-push-action/commit/d6b0244acff947f4c8af0bd18da11a4dda72a795))
+
+### Continuous Integration
+
+- add concurrency guards to recurring workflows ([f915a93](https://github.com/somaz94/helm-oci-push-action/commit/f915a93b2bcb920bfc13f5c2490792fbdc33e981))
+
+### Chores
+
+- set CODEOWNERS to @somaz94 ([8559ec0](https://github.com/somaz94/helm-oci-push-action/commit/8559ec07d5b6d089c30c41ebf6276bec8020ad22))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.1](https://github.com/somaz94/helm-oci-push-action/compare/v1.0.0...v1.0.1) (2026-04-21)
 
 ### Code Refactoring
