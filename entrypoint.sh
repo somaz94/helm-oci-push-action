@@ -61,6 +61,10 @@ if is_true "$REGISTRY_LOGIN"; then
     exit 1
   fi
   REGISTRY_HOST=$(echo "$REGISTRY" | sed -E 's|^oci://||; s|/.*$||')
+  if [[ -z "$REGISTRY_HOST" ]]; then
+    log_err "Could not derive registry host from '$REGISTRY'."
+    exit 1
+  fi
 
   group_start "Login to $REGISTRY_HOST"
   log "Login to $REGISTRY_HOST as $USERNAME"
@@ -79,7 +83,11 @@ trap 'rm -rf "$STAGING_DIR"' EXIT
 tgz_meta() {
   local tgz="$1" tmp chart_yaml name version
   tmp=$(mktemp -d)
-  tar -xzf "$tgz" -C "$tmp"
+  if ! tar -xzf "$tgz" -C "$tmp"; then
+    rm -rf "$tmp"
+    log_err "Failed to extract $tgz"
+    return 1
+  fi
   chart_yaml=$(find "$tmp" -maxdepth 2 -name 'Chart.yaml' | head -n1)
   if [[ -z "$chart_yaml" ]]; then
     rm -rf "$tmp"
@@ -99,6 +107,8 @@ group_start "Stage chart tarballs"
 # (a) tarballs glob
 if [[ -n "$TARBALLS_GLOB" ]]; then
   shopt -s nullglob
+  # Intentional word-split glob expansion: TARBALLS_GLOB is treated as one or
+  # more space-free glob patterns; paths containing spaces are not supported.
   # shellcheck disable=SC2206
   GLOB_MATCHES=( $TARBALLS_GLOB )
   shopt -u nullglob
@@ -111,6 +121,7 @@ fi
 if [[ -n "$CHARTS_CSV" ]]; then
   IFS=',' read -ra CHART_PATHS <<< "$CHARTS_CSV"
   for cp in "${CHART_PATHS[@]}"; do
+    [[ "$cp" =~ ^[[:space:]]*$ ]] && continue
     cp="${cp#"${cp%%[![:space:]]*}"}"
     cp="${cp%"${cp##*[![:space:]]}"}"
     [[ -z "$cp" ]] && continue
@@ -164,7 +175,21 @@ REGISTRY_TRIMMED="${REGISTRY%/}"
 group_start "Push to $REGISTRY"
 
 for tgz in "${TARBALLS[@]}"; do
-  read -r name version < <(tgz_meta "$tgz")
+  if ! meta=$(tgz_meta "$tgz"); then
+    log_err "Failed to read chart metadata from $tgz"
+    if is_true "$CONTINUE_ON_ERROR"; then
+      log_warn "continue_on_error=true; moving on"
+      continue
+    fi
+    group_end
+    exit 1
+  fi
+  read -r name version <<< "$meta"
+  if [[ -z "$name" || -z "$version" ]]; then
+    log_err "Empty chart name/version parsed from $tgz"
+    group_end
+    exit 1
+  fi
   ref="$name:$version"
 
   if is_true "$SKIP_EXISTING"; then
