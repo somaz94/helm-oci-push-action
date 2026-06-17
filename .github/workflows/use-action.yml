@@ -32,7 +32,8 @@ jobs:
       - name: Setup Helm (for fixture)
         uses: azure/setup-helm@v5
         with:
-          version: latest
+          version: v3.16.4
+          token: ${{ github.token }}
 
       - name: Create fixture chart with timestamp version
         id: fixture
@@ -89,7 +90,8 @@ jobs:
       - name: Setup Helm (for fixture)
         uses: azure/setup-helm@v5
         with:
-          version: latest
+          version: v3.16.4
+          token: ${{ github.token }}
 
       - name: Create fixture chart with fixed version
         run: |
@@ -156,7 +158,8 @@ jobs:
       - name: Setup Helm (for fixture)
         uses: azure/setup-helm@v5
         with:
-          version: latest
+          version: v3.16.4
+          token: ${{ github.token }}
 
       - name: Create fixture chart
         run: |
