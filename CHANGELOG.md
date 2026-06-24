@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased (2026-06-24)
+
+### Continuous Integration
+
+- pin Helm version and authenticate setup-helm to reduce CI flakes ([f2a4b02](https://github.com/somaz94/helm-oci-push-action/commit/f2a4b02f60ca6d1937f2e55cd12b4a695a020307))
+- add DCO check via shared reusable workflow ([7d8e394](https://github.com/somaz94/helm-oci-push-action/commit/7d8e394a7c3703dcb3a4a8b37d8d6031e947d83b))
+
+### Chores
+
+- **deps:** bump actions/checkout from 6 to 7 (#3) ([#3](https://github.com/somaz94/helm-oci-push-action/pull/3)) ([e6bb891](https://github.com/somaz94/helm-oci-push-action/commit/e6bb891576ebc054b524f4b12c852d79da78556e))
+- **deps:** bump alpine from 3.23 to 3.24 in the docker-minor group (#2) ([#2](https://github.com/somaz94/helm-oci-push-action/pull/2)) ([3e7ad91](https://github.com/somaz94/helm-oci-push-action/commit/3e7ad914cee293d62f0a83eec2ea027c67c19b8c))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.0.2](https://github.com/somaz94/helm-oci-push-action/compare/v1.0.1...v1.0.2) (2026-06-04)
 
 ### Bug Fixes
