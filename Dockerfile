@@ -9,8 +9,7 @@ RUN apk add --no-cache \
         ca-certificates \
         coreutils \
     && if [ "$HELM_VERSION" = "latest" ]; then \
-         HELM_VERSION=$(curl -fsSL https://api.github.com/repos/helm/helm/releases/latest \
-                          | grep '"tag_name"' | head -n1 | cut -d'"' -f4); \
+         HELM_VERSION=$(curl -fsSL https://get.helm.sh/helm-latest-version); \
        fi \
     && echo "Installing helm $HELM_VERSION" \
     && curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" \
