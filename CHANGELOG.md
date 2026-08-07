@@ -2,10 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased (2026-06-24)
+## Unreleased (2026-08-07)
+
+### Bug Fixes
+
+- fetch helm on the build platform so the arm64 image builds without emulation ([6163690](https://github.com/somaz94/helm-oci-push-action/commit/61636900eeeb40dc9158a2c48b22aab7d11bfa4c))
+- resolve helm latest via get.helm.sh to avoid GitHub API rate limit ([438970a](https://github.com/somaz94/helm-oci-push-action/commit/438970a81559ee8fdbb3e268def06ca41bee334c))
+
+### Performance Improvements
+
+- ship a prebuilt multi-arch image instead of building per run ([3d5364a](https://github.com/somaz94/helm-oci-push-action/commit/3d5364a75b9578ae11b582a228001489ba625f0b))
 
 ### Continuous Integration
 
+- remove DCO workflow ([89fb70c](https://github.com/somaz94/helm-oci-push-action/commit/89fb70cbde9d529b8ed118c6ca9ad7f87721dc6c))
+- adopt semantic-pr, labels, lock-threads, PR size, and auto-assign reusables ([1423e52](https://github.com/somaz94/helm-oci-push-action/commit/1423e529393abcbcce283d351688caf7246a99ad))
+- use reusable stale-issues workflow ([9d5d1bd](https://github.com/somaz94/helm-oci-push-action/commit/9d5d1bd12310d6d5d9ab8d6a0340c4f0ab611327))
+- use reusable issue-greeting workflow ([02c310d](https://github.com/somaz94/helm-oci-push-action/commit/02c310daff95f67be6dd53d63dc293d254cd659a))
+- use reusable dependabot-auto-merge workflow ([fad8371](https://github.com/somaz94/helm-oci-push-action/commit/fad8371d2643dd69b70a68bf32df493a191fac59))
+- use reusable contributors workflow ([9a37e8c](https://github.com/somaz94/helm-oci-push-action/commit/9a37e8c085bbb78506af67fda03fbef332f50665))
+- add ok-to-test workflow stub ([53bf7d8](https://github.com/somaz94/helm-oci-push-action/commit/53bf7d8a829dff50f5f7b0c7dd1f7688a595ec68))
+- add PR welcome workflow stub ([531af39](https://github.com/somaz94/helm-oci-push-action/commit/531af3965d258ee91e27988c169dedfd1e901917))
 - pin Helm version and authenticate setup-helm to reduce CI flakes ([f2a4b02](https://github.com/somaz94/helm-oci-push-action/commit/f2a4b02f60ca6d1937f2e55cd12b4a695a020307))
 - add DCO check via shared reusable workflow ([7d8e394](https://github.com/somaz94/helm-oci-push-action/commit/7d8e394a7c3703dcb3a4a8b37d8d6031e947d83b))
 
