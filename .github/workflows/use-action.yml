@@ -23,9 +23,15 @@ jobs:
   smoke-test-basic:
     name: Smoke Test (charts mode, real push)
     runs-on: ubuntu-latest
+    # `Create release` fires twice per release: once as workflow_dispatch, which
+    # only seeds the container image while the tag does not exist yet, and once
+    # on the tag push that actually publishes the release. Smoke-testing the
+    # first one resolves the released tag to the PREVIOUS version, so every
+    # release left a failing run behind.
     if: >
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
     steps:
       - uses: actions/checkout@v7
 
@@ -81,9 +87,15 @@ jobs:
     name: Smoke Test (skip_existing)
     runs-on: ubuntu-latest
     needs: smoke-test-basic
+    # `Create release` fires twice per release: once as workflow_dispatch, which
+    # only seeds the container image while the tag does not exist yet, and once
+    # on the tag push that actually publishes the release. Smoke-testing the
+    # first one resolves the released tag to the PREVIOUS version, so every
+    # release left a failing run behind.
     if: >
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
     steps:
       - uses: actions/checkout@v7
 
@@ -149,9 +161,15 @@ jobs:
   smoke-test-dry-run:
     name: Smoke Test (dry_run)
     runs-on: ubuntu-latest
+    # `Create release` fires twice per release: once as workflow_dispatch, which
+    # only seeds the container image while the tag does not exist yet, and once
+    # on the tag push that actually publishes the release. Smoke-testing the
+    # first one resolves the released tag to the PREVIOUS version, so every
+    # release left a failing run behind.
     if: >
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
     steps:
       - uses: actions/checkout@v7
 
