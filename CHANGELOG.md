@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0](https://github.com/somaz94/helm-oci-push-action/compare/v1.1.0...v1.2.0) (2026-11-12)
+
+### Features
+
+- retry failed helm pushes with backoff and report failed_charts ([c660193](https://github.com/somaz94/helm-oci-push-action/commit/c6601932c5ec4b4ed150674b0f993d6928e508d7))
+
+### Continuous Integration
+
+- adopt the shared git-cliff template to skip changelog commits and duplicate lines ([32be9a5](https://github.com/somaz94/helm-oci-push-action/commit/32be9a55e73d14c1482de0bd7a7e5a05b20b6e36))
+- correct stale image-seeding comments ([890ba49](https://github.com/somaz94/helm-oci-push-action/commit/890ba490e3299981881c16f90ca1b2ff44fe4827))
+- trim redundant comments in gitlab-mirror workflow ([ffda73f](https://github.com/somaz94/helm-oci-push-action/commit/ffda73fb6404e570e3358464825f999c631c4c72))
+- correct the image-seeding comment in the release workflow ([1d81da9](https://github.com/somaz94/helm-oci-push-action/commit/1d81da9d16f468a83a752d5e3ac3ce881f78728f))
+- retry mirror pushes on transient remote failures ([924dbfa](https://github.com/somaz94/helm-oci-push-action/commit/924dbfa8b63daa4a0973a7a9f463d023a87f6db1))
+- drop the dead issue-close trigger from changelog generation ([a2e9a91](https://github.com/somaz94/helm-oci-push-action/commit/a2e9a91682504aff42203bc9cabed196c8105f9e))
+- skip release-triggered runs on the image-seeding dispatch ([1170640](https://github.com/somaz94/helm-oci-push-action/commit/1170640e89f63e79c3b90c37ec8f69b7c887a878))
+
+### Chores
+
+- bump the action image to v1.2.0 ([beb8704](https://github.com/somaz94/helm-oci-push-action/commit/beb870447986fd9cd3a44338dd63528a0edab328))
+- drop Node.js boilerplate from .gitignore ([76cd407](https://github.com/somaz94/helm-oci-push-action/commit/76cd40700f65a2a722f9f925e1a20082a4abda17))
+- trim redundant comments in CODEOWNERS ([55c211f](https://github.com/somaz94/helm-oci-push-action/commit/55c211f171ab455139a90543ec92ccf9259290c6))
+
+### Contributors
+
+- somaz
+
+<br/>
+
 ## [v1.1.0](https://github.com/somaz94/helm-oci-push-action/compare/v1.0.2...v1.1.0) (2026-08-07)
 
 ### Bug Fixes
