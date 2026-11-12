@@ -71,7 +71,7 @@ runs:
   # (~31s). Subtle: this version's image must be published (release.yml
   # workflow_dispatch) before its git tag is pushed, and a runner can pull only
   # the pushed platforms (linux/amd64, linux/arm64).
-  image: docker://ghcr.io/somaz94/helm-oci-push-action:v1.1.0
+  image: docker://ghcr.io/somaz94/helm-oci-push-action:v1.2.0
   env:
     INPUT_TARBALLS: ${{ inputs.tarballs }}
     INPUT_CHARTS: ${{ inputs.charts }}
