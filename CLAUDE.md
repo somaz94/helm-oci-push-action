@@ -7,13 +7,13 @@
 - Shell-based GitHub Action (Docker container action)
 - Pushes Helm charts to any OCI registry (GHCR, ECR, GAR, Harbor, Quay, Artifactory)
 - Three input modes: `tarballs` glob, `charts` comma-separated paths, `charts_dir` auto-scan
-- Built-in `helm registry login`, `dry_run`, `skip_existing`, `continue_on_error`
+- Built-in `helm registry login`, `dry_run`, `skip_existing`, `continue_on_error`, push retries with backoff
 
 <br/>
 
 ## Key Files
 
-- `action.yml` — GitHub Action definition (11 inputs, 2 outputs, `runs.using: docker`)
+- `action.yml` — GitHub Action definition (`runs.using: docker`, pinned to a published image)
 - `Dockerfile` — alpine 3.23 + latest stable helm (resolved at build time via GitHub releases API; `HELM_VERSION` ARG defaults to `latest`, override for a pinned version)
 - `entrypoint.sh` — main push logic (`$INPUT_*` env vars, writes to `$GITHUB_OUTPUT` and `$GITHUB_STEP_SUMMARY`)
 - `cliff.toml` — git-cliff conventional commit groups for release notes
@@ -41,7 +41,7 @@ docker run --rm \
 
 ## Workflows
 
-- `ci.yml` — shellcheck + docker build + matrix(`tarballs`/`charts`/`charts_dir`) dry-run verification
+- `ci.yml` — shellcheck + docker build with push-retry tests (`make test-retry test-retry-exhausted`, stubbed `helm`) + matrix(`tarballs`/`charts`/`charts_dir`) dry-run verification
 - `release.yml` — git-cliff release notes + `softprops/action-gh-release` + `somaz94/major-tag-action` for v1 sliding tag
 - `use-action.yml` — post-release smoke tests against `oci://ghcr.io/<owner>/test-helm-oci-push`
 - `gitlab-mirror.yml`, `changelog-generator.yml`, `contributors.yml`, `dependabot-auto-merge.yml`, `issue-greeting.yml`, `stale-issues.yml` — standard repo automation

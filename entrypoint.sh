@@ -39,11 +39,23 @@ PASSWORD="${INPUT_PASSWORD:-}"
 DRY_RUN="${INPUT_DRY_RUN:-false}"
 SKIP_EXISTING="${INPUT_SKIP_EXISTING:-false}"
 CONTINUE_ON_ERROR="${INPUT_CONTINUE_ON_ERROR:-false}"
+PUSH_RETRIES="${INPUT_PUSH_RETRIES:-3}"
+PUSH_RETRY_DELAY="${INPUT_PUSH_RETRY_DELAY:-5}"
 
 if [[ -z "$REGISTRY" ]]; then
   log_err "Input 'registry' is required."
   exit 1
 fi
+
+for pair in "push_retries=$PUSH_RETRIES" "push_retry_delay=$PUSH_RETRY_DELAY"; do
+  if [[ ! "${pair#*=}" =~ ^[0-9]+$ ]]; then
+    log_err "Input '${pair%%=*}' must be a non-negative integer, got '${pair#*=}'."
+    exit 1
+  fi
+done
+# A leading zero would otherwise be read as octal; '08' made the retry loop endless.
+PUSH_RETRIES=$((10#$PUSH_RETRIES))
+PUSH_RETRY_DELAY=$((10#$PUSH_RETRY_DELAY))
 
 if [[ -z "$TARBALLS_GLOB" && -z "$CHARTS_CSV" && -z "$CHARTS_DIR" ]]; then
   log_err "At least one of inputs 'tarballs', 'charts', 'charts_dir' must be provided."
@@ -163,14 +175,35 @@ if [[ ${#TARBALLS[@]} -eq 0 ]]; then
   log_warn "No chart tarballs to push (no matches and no charts to package)."
   output_line "pushed_charts="
   output_line "skipped_charts="
+  output_line "failed_charts="
   exit 0
 fi
 
 # ---- Push ----
 declare -a PUSHED=()
 declare -a SKIPPED=()
+declare -a FAILED=()
 
 REGISTRY_TRIMMED="${REGISTRY%/}"
+
+# GHCR can answer the first push to a brand-new package with
+# `failed to perform "Tag" on destination: ...: not found` while the manifest it
+# just accepted is not yet readable; the same push succeeds moments later.
+push_with_retry() {
+  local tgz="$1" ref="$2" attempt=0 delay="$PUSH_RETRY_DELAY"
+  while true; do
+    if helm push "$tgz" "$REGISTRY"; then
+      return 0
+    fi
+    if (( attempt >= PUSH_RETRIES )); then
+      return 1
+    fi
+    attempt=$((attempt + 1))
+    log_warn "Push of $ref failed; retry $attempt/$PUSH_RETRIES in ${delay}s"
+    sleep "$delay"
+    delay=$(( delay * 2 > 300 ? 300 : delay * 2 ))
+  done
+}
 
 group_start "Push to $REGISTRY"
 
@@ -179,6 +212,7 @@ for tgz in "${TARBALLS[@]}"; do
     log_err "Failed to read chart metadata from $tgz"
     if is_true "$CONTINUE_ON_ERROR"; then
       log_warn "continue_on_error=true; moving on"
+      FAILED+=("$(basename "$tgz")")
       continue
     fi
     group_end
@@ -207,12 +241,13 @@ for tgz in "${TARBALLS[@]}"; do
   fi
 
   log "Pushing $ref to $REGISTRY"
-  if helm push "$tgz" "$REGISTRY"; then
+  if push_with_retry "$tgz" "$ref"; then
     PUSHED+=("$ref")
   else
     log_err "Failed to push $ref"
     if is_true "$CONTINUE_ON_ERROR"; then
       log_warn "continue_on_error=true; moving on"
+      FAILED+=("$ref")
       continue
     fi
     group_end
@@ -227,11 +262,14 @@ join_csv() { local IFS=','; echo "$*"; }
 
 PUSHED_CSV=""
 SKIPPED_CSV=""
+FAILED_CSV=""
 [[ ${#PUSHED[@]} -gt 0 ]] && PUSHED_CSV=$(join_csv "${PUSHED[@]}")
 [[ ${#SKIPPED[@]} -gt 0 ]] && SKIPPED_CSV=$(join_csv "${SKIPPED[@]}")
+[[ ${#FAILED[@]} -gt 0 ]] && FAILED_CSV=$(join_csv "${FAILED[@]}")
 
 output_line "pushed_charts=${PUSHED_CSV}"
 output_line "skipped_charts=${SKIPPED_CSV}"
+output_line "failed_charts=${FAILED_CSV}"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
@@ -243,7 +281,12 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     echo "|--------|-------|"
     for r in "${PUSHED[@]}"; do echo "| pushed | \`$r\` |"; done
     for r in "${SKIPPED[@]}"; do echo "| skipped | \`$r\` |"; done
+    for r in "${FAILED[@]}"; do echo "| failed | \`$r\` |"; done
   } >> "$GITHUB_STEP_SUMMARY"
 fi
 
-log "Done. Pushed: ${#PUSHED[@]}, Skipped: ${#SKIPPED[@]}"
+if [[ ${#FAILED[@]} -gt 0 ]]; then
+  log_warn "${#FAILED[@]} chart(s) failed and were skipped because continue_on_error=true: ${FAILED_CSV}"
+fi
+
+log "Done. Pushed: ${#PUSHED[@]}, Skipped: ${#SKIPPED[@]}, Failed: ${#FAILED[@]}"

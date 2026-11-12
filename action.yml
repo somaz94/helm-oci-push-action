@@ -44,15 +44,25 @@ inputs:
     required: false
     default: 'false'
   continue_on_error:
-    description: 'If true, continue with the next chart when a push fails instead of failing the step'
+    description: 'If true, continue with the next chart when a push fails instead of failing the step. Failed charts are listed in the failed_charts output.'
     required: false
     default: 'false'
+  push_retries:
+    description: 'How many times to retry a failed helm push before giving up (0 disables retries)'
+    required: false
+    default: '3'
+  push_retry_delay:
+    description: 'Seconds to wait before the first retry; the wait doubles on each further retry, up to 300'
+    required: false
+    default: '5'
 
 outputs:
   pushed_charts:
     description: 'Comma-separated list of name:version pairs actually pushed'
   skipped_charts:
     description: 'Comma-separated list of name:version pairs skipped (existing or dry-run)'
+  failed_charts:
+    description: 'Comma-separated list of name:version pairs that failed to push, or the tarball file name when its Chart.yaml could not be read (only non-empty with continue_on_error)'
 
 runs:
   using: docker
@@ -73,3 +83,5 @@ runs:
     INPUT_DRY_RUN: ${{ inputs.dry_run }}
     INPUT_SKIP_EXISTING: ${{ inputs.skip_existing }}
     INPUT_CONTINUE_ON_ERROR: ${{ inputs.continue_on_error }}
+    INPUT_PUSH_RETRIES: ${{ inputs.push_retries }}
+    INPUT_PUSH_RETRY_DELAY: ${{ inputs.push_retry_delay }}

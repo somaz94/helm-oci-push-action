@@ -37,6 +37,11 @@ jobs:
       - name: Verify helm version inside image
         run: docker run --rm --entrypoint helm helm-oci-push-action:ci version --short
 
+      # `uses: ./` runs the published image pinned in action.yml, so push
+      # retries are tested against the image built here instead.
+      - name: Test push retries
+        run: make test-retry test-retry-exhausted IMAGE=helm-oci-push-action:ci
+
   test-action:
     name: Test Action (${{ matrix.mode }})
     runs-on: ubuntu-latest

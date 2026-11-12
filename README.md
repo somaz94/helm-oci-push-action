@@ -16,7 +16,8 @@ A GitHub Action that pushes Helm charts to any OCI registry (GHCR, ECR, GAR, Har
 - Three input modes: **`tarballs`** glob, **`charts`** comma-separated paths, **`charts_dir`** auto-scan
 - **Dry-run** mode for PR validation without publishing
 - **Skip existing** chart versions to make releases idempotent
-- **`continue_on_error`** to keep going when one chart fails
+- **`continue_on_error`** to keep going when one chart fails, with the failures reported in `failed_charts`
+- **Retries** a failed push with backoff, which rides out GHCR's transient `failed to perform "Tag"` error on a new package
 - Built-in `helm registry login` (or skip and let your workflow handle it)
 - Self-contained Docker action — `helm` is bundled, no `azure/setup-helm` required
 
@@ -170,7 +171,9 @@ Make releases idempotent — chart versions already present in the registry are 
 | `password` | Registry password / token (typically `secrets.GITHUB_TOKEN` for GHCR) | No | `''` |
 | `dry_run` | Package and validate but do not push | No | `false` |
 | `skip_existing` | Skip chart@version pairs already in the registry (best-effort) | No | `false` |
-| `continue_on_error` | Continue with the next chart when a push fails | No | `false` |
+| `continue_on_error` | Continue with the next chart when a push fails; the step still succeeds, so check `failed_charts` | No | `false` |
+| `push_retries` | Retries of a failed `helm push` before giving up (`0` disables) | No | `3` |
+| `push_retry_delay` | Seconds before the first retry, doubled on each further retry up to 300 | No | `5` |
 
 At least one of `tarballs`, `charts`, or `charts_dir` must be provided.
 
@@ -182,6 +185,7 @@ At least one of `tarballs`, `charts`, or `charts_dir` must be provided.
 |--------|-------------|
 | `pushed_charts` | Comma-separated `name:version` pairs actually pushed |
 | `skipped_charts` | Comma-separated `name:version` pairs skipped (existing or dry-run) |
+| `failed_charts` | Comma-separated `name:version` pairs that failed to push, or the tarball file name when its `Chart.yaml` could not be read (non-empty only with `continue_on_error`) |
 
 Example:
 
@@ -196,6 +200,7 @@ Example:
 - run: |
     echo "Pushed: ${{ steps.push.outputs.pushed_charts }}"
     echo "Skipped: ${{ steps.push.outputs.skipped_charts }}"
+    echo "Failed: ${{ steps.push.outputs.failed_charts }}"
 ```
 
 <br/>

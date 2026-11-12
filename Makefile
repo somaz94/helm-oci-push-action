@@ -1,4 +1,4 @@
-.PHONY: build shellcheck fixtures test test-charts test-charts-dir test-tarballs clean help
+.PHONY: build shellcheck fixtures test test-charts test-charts-dir test-tarballs test-retry test-retry-exhausted clean help
 
 IMAGE         := helm-oci-push-action:local
 FIXTURE_DIR   := fixtures
@@ -13,6 +13,18 @@ DOCKER_RUN := docker run --rm \
 	-e INPUT_USERNAME= -e INPUT_PASSWORD= \
 	-e INPUT_SKIP_EXISTING=false \
 	-e INPUT_CONTINUE_ON_ERROR=false
+
+# A real push through tests/stub/helm, which fails the first FAIL_PUSHES pushes.
+STUB_RUN := docker run --rm \
+	-v $$(pwd):/github/workspace -w /github/workspace \
+	-e PATH=/github/workspace/tests/stub:/usr/local/bin:/usr/bin:/bin \
+	-e INPUT_REGISTRY=$(TEST_REGISTRY) \
+	-e INPUT_REGISTRY_LOGIN=false \
+	-e INPUT_DRY_RUN=false \
+	-e INPUT_SKIP_EXISTING=false \
+	-e INPUT_PUSH_RETRY_DELAY=0 \
+	-e INPUT_TARBALLS= -e INPUT_CHARTS_DIR= \
+	-e INPUT_CHARTS=$(FIXTURE_DIR)/charts/test-chart
 
 ## Build
 
@@ -33,7 +45,7 @@ fixtures: ## Create a local fixture chart used by all test targets
 
 ## Test (dry-run only; no real registry push)
 
-test: build fixtures test-charts test-charts-dir test-tarballs ## Build image, prep fixtures, run all dry-run tests
+test: build fixtures test-charts test-charts-dir test-tarballs test-retry test-retry-exhausted ## Build image, prep fixtures, run all tests
 	@echo "[PASS] all local tests"
 
 test-charts: build fixtures ## Verify 'charts' input mode (dry-run)
@@ -49,6 +61,17 @@ test-tarballs: build fixtures ## Verify 'tarballs' input mode (pre-packages a ch
 	@docker run --rm -v $$(pwd):/w -w /w --entrypoint helm $(IMAGE) package $(FIXTURE_DIR)/charts/test-chart -d $(DIST_DIR)/ >/dev/null
 	@out=$$($(DOCKER_RUN) -e 'INPUT_TARBALLS=$(DIST_DIR)/*.tgz' -e INPUT_CHARTS= -e INPUT_CHARTS_DIR= $(IMAGE) 2>&1); \
 		echo "$$out" | grep -q 'dry-run.*test-chart:0.1.0' && echo "[PASS] tarballs mode"
+
+test-retry: build fixtures ## Verify a push that fails once succeeds on retry
+	@out=$$($(STUB_RUN) -e FAIL_PUSHES=1 -e INPUT_PUSH_RETRIES=2 -e INPUT_CONTINUE_ON_ERROR=false $(IMAGE) 2>&1) || { echo "$$out"; exit 1; }; \
+		echo "$$out" | grep -q 'retry 1/2' && echo "$$out" | grep -q 'pushed_charts=test-chart:0.1.0' && echo "[PASS] retry"
+
+test-retry-exhausted: build fixtures ## Verify exhausted retries fail the step, or land in failed_charts with continue_on_error
+	@out=$$($(STUB_RUN) -e FAIL_PUSHES=9 -e INPUT_PUSH_RETRIES=1 -e INPUT_CONTINUE_ON_ERROR=false $(IMAGE) 2>&1) && { \
+		echo "[FAIL] exhausted retries should fail the step"; exit 1; }; \
+		echo "$$out" | grep -q 'sha256:0000' || { echo "$$out"; exit 1; }
+	@out=$$($(STUB_RUN) -e FAIL_PUSHES=9 -e INPUT_PUSH_RETRIES=1 -e INPUT_CONTINUE_ON_ERROR=true $(IMAGE) 2>&1) || { echo "$$out"; exit 1; }; \
+		echo "$$out" | grep -q 'sha256:0000' && echo "$$out" | grep -q 'failed_charts=test-chart:0.1.0' && echo "[PASS] retry exhausted"
 
 ## Cleanup
 
